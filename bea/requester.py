@@ -6,14 +6,13 @@ to make calls and consume the data released by the BEA.
 """
 import requests
 import json
-import collections
 import pandas
 from pprint import pprint
+from settings import DATASET_LIST_SETTINGS
 
 
 
-
-def request_and_unpack_json(request_url, node_hierarchy):
+def request_and_unpack_json(request_url, node_hierarchy, return_json=True):
     """
     Attempts to return a "narrowed" json response, by
     unpacking the initial response by traversing the
@@ -34,7 +33,10 @@ def request_and_unpack_json(request_url, node_hierarchy):
     json_response = requests.get(request_url).json()
     for k, v in node_hierarchy.items():
         json_response = json_response[v]
-    return json.dumps(json_response)
+    if return_json:
+        return json.dumps(json_response)
+    else:
+        return json_response
 
 
 def json_to_excel(output_file_path, output_spreadsheet_name,
@@ -77,44 +79,20 @@ def build_url(settings):
 
 if __name__=='__main__':
 
-    # Settings and initial configuration
-    GET_DATASET_LIST_SETTINGS = {
-        'api_key': '3924A4B4-43A0-4BE6-B131-650F0740C025',
-        'base_url': 'https://www.bea.gov/api/data/',
-        'method': 'GETDATASETLIST',
-        'result_format': 'JSON',
-        'node_hierarchy': collections.OrderedDict({
-            'root_node': 'BEAAPI',
-            'child_node_one': 'Results',
-            'child_node_two': 'Dataset',
-        })
-    }
 
-
-    GET_DATASET_PARAMS_SETTINGS = {
-        'api_key': '3924A4B4-43A0-4BE6-B131-650F0740C025',
-        'base_url': 'https://www.bea.gov/api/data/',
-        'method': 'getparameterlist',
-        'datasetname': 'GETDATASETLIST',
-        'result_format': 'JSON',
-        'node_hierarchy': collections.OrderedDict({
-            'root_node': 'BEAAPI',
-            'child_node_one': 'Results',
-            'child_node_two': 'Parameter',
-        })
-    }
-
-    url = build_url(settings=GET_DATASET_LIST_SETTINGS)
+    url = build_url(settings=DATASET_LIST_SETTINGS)
     response = requests.get(url).json()
 
     # Calls
     json_response = request_and_unpack_json(
         request_url=url,
-        node_hierarchy=GET_DATASET_LIST_SETTINGS['node_hierarchy']
+        node_hierarchy=DATASET_LIST_SETTINGS['node_hierarchy'],
+        return_json=False
     )
+    dataset_list = [item['DatasetName'] for item in json_response]
 
-    dataset_list = [dataset.get('DatasetName') for dataset in json_response]
-    print(dataset_list)
+    
+    # pprint(json.loads(json_response))
     # json_to_excel(
     #     output_file_path=r'C:\Users\eirik\Desktop\metadata.xlsx',
     #     output_spreadsheet_name=bea_request_settings['datasetname'],
