@@ -49,7 +49,7 @@ class BeaRequestHandler:
         self.root_node_hierarchy = root_node_hierarchy
 
 
-    def collect_metadata(self):
+    def collect_api_metadata(self):
         """
         Generates and returns an ordered dict of Pandas Dataframes containing
         the datasets and their metadata (param values, etc.)
@@ -70,7 +70,7 @@ class BeaRequestHandler:
             try:
                 df = pandas.DataFrame(params)
                 ord_dict[dataset + '_params'] = df
-            except ValueError as e:
+            except ValueError:
                 try:
                     wrapper_list = []
                     wrapper_list.append(params)
@@ -119,6 +119,27 @@ class BeaRequestHandler:
         )
         return response
 
+    def get_parameter_values(self, param_name, dataset_name,
+                             target_node_name='ParamValue', method='GetParameterValues',
+                             result_format='JSON', return_json=True):
+
+        request_url = ('{0}?&UserID={1}&method={2}&datasetname={3}'
+                       '&ParameterName={4}&ResultFormat={5}&'.format(
+            self.root_url,
+            self.user_key,
+            method,
+            dataset_name,
+            param_name,
+            result_format
+        ))
+        param_node_hierarchy = self.root_node_hierarchy
+        param_node_hierarchy['data_node'] = target_node_name
+        response = self._request_and_unpack_json(
+            request_url=request_url,
+            node_hierarchy=param_node_hierarchy,
+            return_json=return_json
+        )
+        return response
 
     def _request_and_unpack_json(self, request_url, node_hierarchy,
                                  return_json=True):
@@ -177,8 +198,10 @@ if __name__=='__main__':
         BEA_API_USER_KEY,
         BEA_API_RESULTS_NODE_HIERARCHY
     )
-    meta_data = handler.collect_metadata()
-    handler.data_to_excel(output_file_path=r'C:\Users\eirik\Desktop\BEA_Metadata.xlsx', data=meta_data)
+    meta_data = handler.collect_api_metadata()
+    for k, v in meta_data.items():
+        print(k)
+    # handler.data_to_excel(output_file_path=r'C:\Users\eirik\Desktop\BEA_Metadata.xlsx', data=meta_data)
     # datasets = handler.get_dataset_list(return_json=False)
     # datasets_list = [d['DatasetName'] for d in datasets]
 
