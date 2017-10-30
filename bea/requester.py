@@ -26,7 +26,7 @@ import requests
 import collections
 import json
 import pandas
-import datetime
+from pprint import pprint
 
 
 
@@ -38,15 +38,20 @@ BEA_API_RESULTS_NODE_HIERARCHY = collections.OrderedDict(
         'results_node': 'Results',
     }
 )
+DEPRECATED_DATASET_LIST = [
+    'RegionalData',
+]
 
 
 class BeaRequestHandler:
 
     def __init__(self, root_url, user_key,
-                 root_node_hierarchy):
+                 root_node_hierarchy, deprecations):
         self.root_url = root_url
         self.user_key = user_key
         self.root_node_hierarchy = root_node_hierarchy
+        self.dataset_deprecations = deprecations
+        self.datasets_list = []
 
 
     def collect_api_metadata(self):
@@ -60,13 +65,19 @@ class BeaRequestHandler:
 
         # Get datasets response, convert to dataframe, add to ordered dict
         datasets = self.get_dataset_list(return_json=False)
-        ord_dict['DATASETS'] = pandas.DataFrame(datasets)
+        for index, dictionary in enumerate(datasets):
+            for ds in self.dataset_deprecations:
+                if dictionary['DatasetName'] == ds:
+                    datasets.pop(index)
+        ord_dict['BEA_Datasets'] = pandas.DataFrame(datasets)
 
         # Get params response for each dataset in list,
         # convert to dataframe, add to ordered dict
-        datasets_list = [d['DatasetName'] for d in datasets]
-        for dataset in datasets_list:
-            params = self.get_dataset_params(dataset_name=dataset, return_json=False)
+        self.datasets_list = [d['DatasetName'] for d in datasets]
+        for dataset in self.datasets_list:
+            ord_dict.clear()
+            params = self.get_parameter_list(dataset_name=dataset,
+                                             return_json=False)
             try:
                 df = pandas.DataFrame(params)
                 ord_dict[dataset + '_params'] = df
@@ -78,7 +89,33 @@ class BeaRequestHandler:
                     ord_dict[dataset + '_params'] = df
                 except:
                     raise
-        return ord_dict
+
+            # Get param values for each param response
+            # convert to dataframe, add to ordered dict
+            if isinstance(params, list):
+                param_name_list = [d['ParameterName'] for d in params]
+            elif isinstance(params, dict):
+                param_name_list = [v for k, v in params.items() if k == 'ParameterName']
+            else:
+                raise ValueError("Check the params response, "
+                                 "must be a list or dictionary")
+            for param_name in param_name_list:
+                param_values = self.get_parameter_values(param_name=param_name,
+                                                         dataset_name=dataset,
+                                                         return_json=False)
+                try:
+                    df = pandas.DataFrame(param_values)
+                    ord_dict['param_' + param_name] = df
+                except ValueError:
+                    try:
+                        wrapper_list = []
+                        wrapper_list.append(params)
+                        df = pandas.DataFrame(wrapper_list)
+                        ord_dict['param_' + param_name] = df
+                    except:
+                        raise
+            yield (dataset, ord_dict)
+        # return ord_dict
 
 
     def get_dataset_list(self, target_node_name='Dataset', method='GetDatasetList',
@@ -99,7 +136,7 @@ class BeaRequestHandler:
         return response
 
 
-    def get_dataset_params(self, dataset_name, target_node_name='Parameter',
+    def get_parameter_list(self, dataset_name, target_node_name='Parameter',
                            method='GetParameterList', result_format='JSON',
                            return_json=True):
         request_url = ('{0}?&UserID={1}&method={2}&datasetname={3}'
@@ -165,12 +202,17 @@ class BeaRequestHandler:
              Python object
         """
         response = requests.get(request_url).json()
-        for k, v in node_hierarchy.items():
-            response = response[v]
-        if return_json:
-            return json.dumps(response)
-        else:
-            return response
+        try:
+            for k, v in node_hierarchy.items():
+                response = response[v]
+            if return_json:
+                return json.dumps(response)
+            else:
+                return response
+        except KeyError as e:
+            print(e)
+            pprint(response)
+            pass
 
 
     def data_to_excel(self, output_file_path, data,
@@ -196,14 +238,12 @@ if __name__=='__main__':
     handler = BeaRequestHandler(
         BEA_API_ROOT_URL,
         BEA_API_USER_KEY,
-        BEA_API_RESULTS_NODE_HIERARCHY
+        BEA_API_RESULTS_NODE_HIERARCHY,
+        DEPRECATED_DATASET_LIST
     )
-    meta_data = handler.collect_api_metadata()
-    for k, v in meta_data.items():
-        print(k)
-    # handler.data_to_excel(output_file_path=r'C:\Users\eirik\Desktop\BEA_Metadata.xlsx', data=meta_data)
-    # datasets = handler.get_dataset_list(return_json=False)
-    # datasets_list = [d['DatasetName'] for d in datasets]
+    metadata = handler.collect_api_metadata()
+    for dataset_name, dataset_subset_dicts in metadata:
+        print(dataset_name, dataset_subset_dicts.keys())
+        handler.data_to_excel(r'C:\Users\eirik\Desktop\BEA_Metadata_{}.xlsx'.format(dataset_name), dataset_subset_dicts)
 
 
-    # handler.data_to_excel(output_file_path=r'C:\Users\eirik\Desktop\BEA_Metadata.xlsx', data=df_dict)
