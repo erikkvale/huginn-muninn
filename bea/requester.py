@@ -26,7 +26,8 @@ import requests
 import collections
 import json
 import pandas
-from pprint import pprint
+import datetime
+
 
 
 BEA_API_ROOT_URL = 'https://www.bea.gov/api/data/'
@@ -46,6 +47,38 @@ class BeaRequestHandler:
         self.root_url = root_url
         self.user_key = user_key
         self.root_node_hierarchy = root_node_hierarchy
+
+
+    def collect_metadata(self):
+        """
+        Generates and returns an ordered dict of Pandas Dataframes containing
+        the datasets and their metadata (param values, etc.)
+        :param datasets: list of datasets
+        :return: <OrderedDict> of all datasets metadata
+        """
+        ord_dict = collections.OrderedDict()
+
+        # Get datasets response, convert to dataframe, add to ordered dict
+        datasets = self.get_dataset_list(return_json=False)
+        ord_dict['DATASETS'] = pandas.DataFrame(datasets)
+
+        # Get params response for each dataset in list,
+        # convert to dataframe, add to ordered dict
+        datasets_list = [d['DatasetName'] for d in datasets]
+        for dataset in datasets_list:
+            params = self.get_dataset_params(dataset_name=dataset, return_json=False)
+            try:
+                df = pandas.DataFrame(params)
+                ord_dict[dataset + '_params'] = df
+            except ValueError as e:
+                try:
+                    wrapper_list = []
+                    wrapper_list.append(params)
+                    df = pandas.DataFrame(wrapper_list)
+                    ord_dict[dataset + '_params'] = df
+                except:
+                    raise
+        return ord_dict
 
 
     def get_dataset_list(self, target_node_name='Dataset', method='GetDatasetList',
@@ -120,7 +153,7 @@ class BeaRequestHandler:
 
 
     def data_to_excel(self, output_file_path, data,
-                      json_orientation='records'):
+                      json_orientation='records', spreadsheet_name=None):
         """
         Attempts to read json data into Pandas dataframe, then
         write that data out to a specified Excel workbook and
@@ -131,8 +164,9 @@ class BeaRequestHandler:
             for k, v in data.items():
                 v.to_excel(writer, k)
         else:
-            df = pandas.read_json(data, orient=json_orientation)
-            df.to_excel(writer, output_spreadsheet_name)
+            if spreadsheet_name:
+                df = pandas.read_json(data, orient=json_orientation)
+                df.to_excel(writer, spreadsheet_name)
         writer.save()
 
 
@@ -143,18 +177,10 @@ if __name__=='__main__':
         BEA_API_USER_KEY,
         BEA_API_RESULTS_NODE_HIERARCHY
     )
-    datasets = handler.get_dataset_list(return_json=False)
-    datasets_list = [d['DatasetName'] for d in datasets]
+    meta_data = handler.collect_metadata()
+    handler.data_to_excel(output_file_path=r'C:\Users\eirik\Desktop\BEA_Metadata.xlsx', data=meta_data)
+    # datasets = handler.get_dataset_list(return_json=False)
+    # datasets_list = [d['DatasetName'] for d in datasets]
 
-    df_dict = collections.OrderedDict()
-    df_dict['datasets_list'] = pandas.DataFrame(datasets)
-    for dataset in datasets_list:
-        params = handler.get_dataset_params(dataset_name=dataset, return_json=False)
-        try:
-            df = pandas.DataFrame(params)
-            df_dict[dataset + '_params'] = df
-            # df = pandas.read_json(params, orient='records')
-        except ValueError:
-            # df = pandas.read_json(params, orient=None)
-            pprint(params)
-    handler.data_to_excel(output_file_path=r'C:\Users\eirik\Desktop\metadata.xlsx', data=df_dict)
+
+    # handler.data_to_excel(output_file_path=r'C:\Users\eirik\Desktop\BEA_Metadata.xlsx', data=df_dict)
