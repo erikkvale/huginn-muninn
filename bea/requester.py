@@ -68,7 +68,7 @@ class BeaRequestHandler:
 
     def get_dataset_params(self, dataset_name, target_node_name='Parameter',
                            method='GetParameterList', result_format='JSON',
-                           return_json=False):
+                           return_json=True):
         request_url = ('{0}?&UserID={1}&method={2}&datasetname={3}'
                        '&ResultFormat={4}&'.format(
             self.root_url,
@@ -81,7 +81,7 @@ class BeaRequestHandler:
         param_node_hierarchy['data_node'] = target_node_name
         response = self._request_and_unpack_json(
             request_url=request_url,
-            node_hierarchy=node_hierarchy,
+            node_hierarchy=param_node_hierarchy,
             return_json=return_json
         )
         return response
@@ -119,25 +119,42 @@ class BeaRequestHandler:
             return response
 
 
-    def json_to_excel(self, output_file_path, output_spreadsheet_name,
-                      json_data, json_orientation='records'):
+    def data_to_excel(self, output_file_path, data,
+                      json_orientation='records'):
         """
         Attempts to read json data into Pandas dataframe, then
         write that data out to a specified Excel workbook and
         spreadsheet.
         """
-        writer = pandas.ExcelWriter(path=output_file_path,
-                                    engine='xlsxwriter')
-        df = pandas.read_json(json_data, orient=json_orientation)
-        df.to_excel(writer, output_spreadsheet_name)
+        writer = pandas.ExcelWriter(path=output_file_path, engine='xlsxwriter')
+        if isinstance(data, (dict, collections.OrderedDict)):
+            for k, v in data.items():
+                v.to_excel(writer, k)
+        else:
+            df = pandas.read_json(data, orient=json_orientation)
+            df.to_excel(writer, output_spreadsheet_name)
         writer.save()
 
 
 if __name__=='__main__':
-    import os
-    handler = BeaRequestHandler(BEA_API_ROOT_URL,
-                                BEA_API_USER_KEY,
-                                BEA_API_RESULTS_NODE_HIERARCHY)
+
+    handler = BeaRequestHandler(
+        BEA_API_ROOT_URL,
+        BEA_API_USER_KEY,
+        BEA_API_RESULTS_NODE_HIERARCHY
+    )
     datasets = handler.get_dataset_list(return_json=False)
-    print(datasets)
-    print(os.getcwd())
+    datasets_list = [d['DatasetName'] for d in datasets]
+
+    df_dict = collections.OrderedDict()
+    df_dict['datasets_list'] = pandas.DataFrame(datasets)
+    for dataset in datasets_list:
+        params = handler.get_dataset_params(dataset_name=dataset, return_json=False)
+        try:
+            df = pandas.DataFrame(params)
+            df_dict[dataset + '_params'] = df
+            # df = pandas.read_json(params, orient='records')
+        except ValueError:
+            # df = pandas.read_json(params, orient=None)
+            pprint(params)
+    handler.data_to_excel(output_file_path=r'C:\Users\eirik\Desktop\metadata.xlsx', data=df_dict)
