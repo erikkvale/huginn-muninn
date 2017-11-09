@@ -44,7 +44,13 @@ DEPRECATED_DATASET_LIST = [
 ]
 
 
-class BeaRequestHandler:
+
+class BaseHandler:
+    pass
+
+
+
+class MetadataHandler:
 
     def __init__(self, root_url, user_key,
                  root_node_hierarchy, deprecations):
@@ -60,9 +66,6 @@ class BeaRequestHandler:
         Generates and returns an ordered dict of Pandas Dataframes
         (as an iterator by dataset) containing the datasets and their metadata
         (param values, etc.)
-
-        :param datasets: list of datasets
-        :return: <OrderedDict> of all datasets metadata
         """
         ord_dict = collections.OrderedDict()
 
@@ -73,6 +76,7 @@ class BeaRequestHandler:
                 if dictionary['DatasetName'] == ds:
                     datasets.pop(index)
         ord_dict['BEA_Datasets'] = pandas.DataFrame(datasets)
+
 
         # Get params response for each dataset in list,
         # convert to dataframe, add to ordered dict
@@ -121,7 +125,7 @@ class BeaRequestHandler:
 
 
     def get_dataset_list(self, target_node_name='Dataset', method='GetDatasetList',
-                         result_format='JSON', return_json=True):
+                         result_format='JSON', return_json=False):
         request_url = '{0}?&UserID={1}&method={2}&ResultFormat={3}&'.format(
             self.root_url,
             self.user_key,
@@ -130,7 +134,7 @@ class BeaRequestHandler:
         )
         dataset_node_hierarchy = self.root_node_hierarchy
         dataset_node_hierarchy['data_node'] = target_node_name
-        response = self._request_and_unpack_json(
+        response = self._request_and_unpack_response(
             request_url=request_url,
             node_hierarchy=dataset_node_hierarchy,
             return_json=return_json
@@ -140,7 +144,7 @@ class BeaRequestHandler:
 
     def get_parameter_list(self, dataset_name, target_node_name='Parameter',
                            method='GetParameterList', result_format='JSON',
-                           return_json=True):
+                           return_json=False):
         request_url = ('{0}?&UserID={1}&method={2}&datasetname={3}'
                        '&ResultFormat={4}&'.format(
             self.root_url,
@@ -151,16 +155,18 @@ class BeaRequestHandler:
         ))
         param_node_hierarchy = self.root_node_hierarchy
         param_node_hierarchy['data_node'] = target_node_name
-        response = self._request_and_unpack_json(
+        response = self._request_and_unpack_response(
             request_url=request_url,
             node_hierarchy=param_node_hierarchy,
             return_json=return_json
         )
         return response
 
+
+
     def get_parameter_values(self, param_name, dataset_name,
                              target_node_name='ParamValue', method='GetParameterValues',
-                             result_format='JSON', return_json=True):
+                             result_format='JSON', return_json=False):
 
         request_url = ('{0}?&UserID={1}&method={2}&datasetname={3}'
                        '&ParameterName={4}&ResultFormat={5}&'.format(
@@ -173,15 +179,17 @@ class BeaRequestHandler:
         ))
         param_node_hierarchy = self.root_node_hierarchy
         param_node_hierarchy['data_node'] = target_node_name
-        response = self._request_and_unpack_json(
+        response = self._request_and_unpack_response(
             request_url=request_url,
             node_hierarchy=param_node_hierarchy,
             return_json=return_json
         )
         return response
 
-    def _request_and_unpack_json(self, request_url, node_hierarchy,
-                                 return_json=True):
+
+
+    def _request_and_unpack_response(self, request_url, node_hierarchy,
+                                     return_json=False):
         """
         Attempts to return a "narrowed" json response, by
         unpacking the initial response by traversing the
@@ -235,17 +243,33 @@ class BeaRequestHandler:
         writer.save()
 
 
-if __name__=='__main__':
 
-    handler = BeaRequestHandler(
+class DataHandler:
+
+    def __init__(self, root_url, user_key,
+                 root_node_hierarchy):
+        self.root_url = root_url
+        self.user_key = user_key
+        self.root_node_hierarchy = root_node_hierarchy
+
+
+    def get_data(self, dataset_name, method='GetData',
+                 result_format='JSON', *dataset_params):
+        request_url = '{0}?&UserID={1}&method={2}&ResultFormat={3}&'.format(
+            self.root_url,
+            self.user_key,
+            method,
+            result_format
+        )
+
+
+if __name__=='__main__':
+    bea_meta_handle = MetadataHandler(
         BEA_API_ROOT_URL,
         BEA_API_USER_KEY,
         BEA_API_RESULTS_NODE_HIERARCHY,
         DEPRECATED_DATASET_LIST
     )
-    metadata = handler.collect_api_metadata()
-    for dataset_name, dataset_subset_dicts in metadata:
-        print(dataset_name, dataset_subset_dicts.keys())
-        handler.data_to_excel(r'C:\Users\eirik\Desktop\BEA_Metadata_{}.xlsx'.format(dataset_name), dataset_subset_dicts)
-
-
+    meta_iterator = bea_meta_handle.collect_api_metadata()
+    for ds, ord_dict in meta_iterator:
+        print(ds, ord_dict)
