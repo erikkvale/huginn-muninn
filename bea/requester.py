@@ -38,6 +38,7 @@ BEA_API_RESULTS_NODE_HIERARCHY = collections.OrderedDict(
         'results_node': 'Results',
     }
 )
+
 DEPRECATED_DATASET_LIST = [
     'RegionalData',
 ]
@@ -56,8 +57,10 @@ class BeaRequestHandler:
 
     def collect_api_metadata(self):
         """
-        Generates and returns an ordered dict of Pandas Dataframes containing
-        the datasets and their metadata (param values, etc.)
+        Generates and returns an ordered dict of Pandas Dataframes
+        (as an iterator by dataset) containing the datasets and their metadata
+        (param values, etc.)
+
         :param datasets: list of datasets
         :return: <OrderedDict> of all datasets metadata
         """
@@ -115,7 +118,6 @@ class BeaRequestHandler:
                     except:
                         raise
             yield (dataset, ord_dict)
-        # return ord_dict
 
 
     def get_dataset_list(self, target_node_name='Dataset', method='GetDatasetList',
