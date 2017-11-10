@@ -4,6 +4,12 @@ BEA API:
 This module contains specifics based on the current documentation,
 to make calls and consume the data released by the BEA.
 
+***NOTE***
+Although the BEA (at the time of this writing) supports both XML
+and JSON responses; this module does not have XML response support
+at this time, only JSON and Python types.
+***NOTE***
+
 --------------------
 API Calling Limits
 --------------------
@@ -39,7 +45,7 @@ BEA_API_RESULTS_NODE_HIERARCHY = collections.OrderedDict(
     }
 )
 
-DEPRECATED_DATASET_LIST = [
+BEA_API_DEPRECATED_DATASETS = [
     'RegionalData',
 ]
 
@@ -58,74 +64,14 @@ class MetadataHandler:
         self.user_key = user_key
         self.root_node_hierarchy = root_node_hierarchy
         self.dataset_deprecations = deprecations
-        self.datasets_list = []
 
 
-    def collect_api_metadata(self):
-        """
-        Generates and returns an ordered dict of Pandas Dataframes
-        (as an iterator by dataset) containing the datasets and their metadata
-        (param values, etc.)
-        """
-        ord_dict = collections.OrderedDict()
-
-        # Get datasets response, convert to dataframe, add to ordered dict
-        datasets = self.get_dataset_list(return_json=False)
-        for index, dictionary in enumerate(datasets):
-            for ds in self.dataset_deprecations:
-                if dictionary['DatasetName'] == ds:
-                    datasets.pop(index)
-        ord_dict['BEA_Datasets'] = pandas.DataFrame(datasets)
 
 
-        # Get params response for each dataset in list,
-        # convert to dataframe, add to ordered dict
-        self.datasets_list = [d['DatasetName'] for d in datasets]
-        for dataset in self.datasets_list:
-            ord_dict.clear()
-            params = self.get_parameter_list(dataset_name=dataset,
-                                             return_json=False)
-            try:
-                df = pandas.DataFrame(params)
-                ord_dict[dataset + '_params'] = df
-            except ValueError:
-                try:
-                    wrapper_list = []
-                    wrapper_list.append(params)
-                    df = pandas.DataFrame(wrapper_list)
-                    ord_dict[dataset + '_params'] = df
-                except:
-                    raise
+    def get_dataset_list(self, target_node_name='Dataset',
+                         method='GetDatasetList', result_format='JSON',
+                         return_json=False, deprecation_filter=None):
 
-            # Get param values for each param response
-            # convert to dataframe, add to ordered dict
-            if isinstance(params, list):
-                param_name_list = [d['ParameterName'] for d in params]
-            elif isinstance(params, dict):
-                param_name_list = [v for k, v in params.items() if k == 'ParameterName']
-            else:
-                raise ValueError("Check the params response, "
-                                 "must be a list or dictionary")
-            for param_name in param_name_list:
-                param_values = self.get_parameter_values(param_name=param_name,
-                                                         dataset_name=dataset,
-                                                         return_json=False)
-                try:
-                    df = pandas.DataFrame(param_values)
-                    ord_dict['param_' + param_name] = df
-                except ValueError:
-                    try:
-                        wrapper_list = []
-                        wrapper_list.append(params)
-                        df = pandas.DataFrame(wrapper_list)
-                        ord_dict['param_' + param_name] = df
-                    except:
-                        raise
-            yield (dataset, ord_dict)
-
-
-    def get_dataset_list(self, target_node_name='Dataset', method='GetDatasetList',
-                         result_format='JSON', return_json=False):
         request_url = '{0}?&UserID={1}&method={2}&ResultFormat={3}&'.format(
             self.root_url,
             self.user_key,
@@ -139,7 +85,14 @@ class MetadataHandler:
             node_hierarchy=dataset_node_hierarchy,
             return_json=return_json
         )
-        return response
+        if not deprecation_filter:
+            return response
+        else:
+            for index, dictionary in enumerate(response):
+                for item in deprecation_filter:
+                    if dictionary['DatasetName'] == item:
+                        response.pop(index)
+            return response
 
 
     def get_parameter_list(self, dataset_name, target_node_name='Parameter',
@@ -263,13 +216,13 @@ class DataHandler:
         )
 
 
+
 if __name__=='__main__':
     bea_meta_handle = MetadataHandler(
         BEA_API_ROOT_URL,
         BEA_API_USER_KEY,
         BEA_API_RESULTS_NODE_HIERARCHY,
-        DEPRECATED_DATASET_LIST
+        BEA_API_DEPRECATED_DATASETS
     )
-    meta_iterator = bea_meta_handle.collect_api_metadata()
-    for ds, ord_dict in meta_iterator:
-        print(ds, ord_dict)
+    bea_meta_handle.collect_api_metadata()
+    print(type(bea_meta_handle.bea_datasets))
