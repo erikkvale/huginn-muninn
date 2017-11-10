@@ -66,8 +66,6 @@ class MetadataHandler:
         self.dataset_deprecations = deprecations
 
 
-
-
     def get_dataset_list(self, target_node_name='Dataset',
                          method='GetDatasetList', result_format='JSON',
                          return_json=False, deprecation_filter=None):
@@ -138,7 +136,6 @@ class MetadataHandler:
             return_json=return_json
         )
         return response
-
 
 
     def _request_and_unpack_response(self, request_url, node_hierarchy,
