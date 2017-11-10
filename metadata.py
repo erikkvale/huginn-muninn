@@ -48,17 +48,24 @@ class MetaRequestHandle:
         else:
             self.result_format = result_format
 
+        # Check base_url request to see if API service
+        # is available
+        response = requests.get(self.base_url)
+        if not response.ok:
+            raise requests.HTTPError
+
+
 # Metadata
-def get_dataset_list(base_url, user_key, result_format):
+def get_dataset_list():
     pass
 
-def get_param_list(base_url, user_key, result_format):
+def get_param_list():
     pass
 
-def get_param_values(base_url, user_key, result_format):
+def get_param_values():
     pass
 
-def get_param_values_filtered(dataset_name, target_param, table_name):
+def get_param_values_filtered():
     pass
 
 

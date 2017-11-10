@@ -1,4 +1,5 @@
 import unittest
+import requests
 from metadata import (
     BEA_API_ROOT_URL,
     BEA_API_USER_KEY,
@@ -7,6 +8,7 @@ from metadata import (
 
 
 class TestMetadataHandler(unittest.TestCase):
+
 
     def test_init_good_result_format_arg(self):
         """
@@ -36,16 +38,21 @@ class TestMetadataHandler(unittest.TestCase):
             )
 
 
-    def test_init_state_variables_are_set_correctly(self):
+    def test_init_good_api_service_response(self):
         """
-        T
+         Valid constructor, if this fails, then
         """
+        try:
+            obj = MetaRequestHandle(
+                base_url=BEA_API_ROOT_URL,
+                user_key=BEA_API_USER_KEY,
+                result_format='JSON'
+            )
+        except requests.HTTPError:
+            self.fail("This should not have produced an HTTPError")
 
-    def test_init_good_request(self):
-        pass
 
-
-    def test_init_bad_request(self):
+    def test_init_bad_api_response(self):
         pass
 
 
