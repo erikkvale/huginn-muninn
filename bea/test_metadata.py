@@ -1,6 +1,8 @@
 import unittest
+
 import requests
-from metadata import (
+
+from bea.metadata import (
     BEA_API_ROOT_URL,
     BEA_API_USER_KEY,
     MetaRequestHandle
