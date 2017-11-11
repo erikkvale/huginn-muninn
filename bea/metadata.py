@@ -6,16 +6,10 @@ from pprint import pprint
 
 class MetadataHandler:
 
-    def __init__(self, base_url, user_key,
-                 result_format='JSON'):
-        self.base_url = base_url
+    def __init__(self, user_key, result_format='JSON'):
+        # The current base URL for the BEA's API
+        self.base_url = 'https://www.bea.gov/api/data/'
         self.user_key = user_key
-
-        # Only JSON result format, i.e. no XML support
-        if result_format != 'JSON':
-            raise ValueError("Only 'JSON' responses are supported at this time")
-        else:
-            self.result_format = result_format
 
         # The current node hierachies to be used to 'unpack'
         # responses to obtain the target data
@@ -33,6 +27,14 @@ class MetadataHandler:
                 'target_node': None
             }
         )
+
+        # Only JSON result format, i.e. no XML support
+        if result_format != 'JSON':
+            raise ValueError("Only 'JSON' responses are supported at this time")
+        else:
+            self.result_format = result_format
+
+
         # Check base_url response to see if API service
         # is available
         response = requests.get(self.base_url)
@@ -155,7 +157,7 @@ class MetadataHandler:
 
 
 if __name__=='__main__':
-    BEA_API_ROOT_URL = 'https://www.bea.gov/api/data/'
+
     BEA_API_USER_KEY = '3924A4B4-43A0-4BE6-B131-650F0740C025'
 
     handler = MetadataHandler(BEA_API_ROOT_URL, BEA_API_USER_KEY)
