@@ -45,11 +45,28 @@ class MetaRequestHandle:
         self.base_url = base_url
         self.user_key = user_key
 
+        # Only JSON result format, i.e. no XML support
         if result_format != 'JSON':
             raise ValueError("Only 'JSON' responses are supported at this time")
         else:
             self.result_format = result_format
 
+        # The current node hierachies to be used to 'unpack'
+        # responses to obtain the target data
+        self.request_node_hierarchy = collections.OrderedDict(
+            {
+                'root_node': 'BEAAPI',
+                'request_node': 'Request',
+                'target_node': 'RequestParam',
+            }
+        )
+        self.results_node_hierarchy = collections.OrderedDict(
+            {
+                'root_node': 'BEAAPI',
+                'results_node': 'Results',
+                'target_node': None
+            }
+        )
         # Check base_url response to see if API service
         # is available
         response = requests.get(self.base_url)
@@ -69,10 +86,10 @@ class MetaRequestHandle:
                 self.result_format
             )
         )
-        return self._process_response(url, target_node, echo_request)
+        return self._get_and_process_response(url, target_node, echo_request)
 
 
-    def _process_response(self, url, target_node, echo_request):
+    def _get_and_process_response(self, url, target_node, echo_request):
         response = requests.get(url)
         if response.ok:
             # Decode JSON response to Python type(s)
@@ -91,15 +108,8 @@ class MetaRequestHandle:
 
 
     def _unpack_request(self, response):
-        REQUEST_NODE_HIERARCHY = collections.OrderedDict(
-            {
-                'root_node': 'BEAAPI',
-                'request_node': 'Request',
-                'target_node': 'RequestParam',
-            }
-        )
         try:
-            for k, v in REQUEST_NODE_HIERARCHY.items():
+            for k, v in self.request_node_hierarchy.items():
                 response = response[v]
             return response
         except KeyError as e:
@@ -110,16 +120,9 @@ class MetaRequestHandle:
 
 
     def _unpack_results(self, response, target_node):
-        RESULTS_NODE_HIERARCHY = collections.OrderedDict(
-            {
-                'root_node': 'BEAAPI',
-                'results_node': 'Results',
-                'target_node': None
-            }
-        )
-        RESULTS_NODE_HIERARCHY['target_node'] = target_node
+        self.results_node_hierarchy['target_node'] = target_node
         try:
-            for k, v in RESULTS_NODE_HIERARCHY.items():
+            for k, v in self.results_node_hierarchy.items():
                 response = response[v]
             return response
         except KeyError as e:
