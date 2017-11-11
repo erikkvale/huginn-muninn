@@ -125,6 +125,28 @@ class MetaRequestHandle:
         return self._get_and_process_response(url, target_node, echo_request)
 
 
+    def get_param_values_filtered(self, dataset_name, target_param,
+                                  table_name, target_node='ParamValue',
+                                  echo_request=False):
+        url = (
+            '{}?&'
+            'UserID={}&'
+            'method=GetParameterValuesFiltered&'
+            'datasetname={}&'
+            'TargetParameter={}&'
+            'TableName={}'
+            'ResultFormat={}&'.format(
+                self.base_url,
+                self.user_key,
+                dataset_name,
+                target_param,
+                table_name,
+                self.result_format
+            )
+        )
+        return self._get_and_process_response(url, target_node, echo_request)
+
+
     def _get_and_process_response(self, url, target_node, echo_request):
         response = requests.get(url)
         if response.ok:
@@ -164,15 +186,6 @@ class MetaRequestHandle:
             print("The key: {} does not exist in the response"
                   .format(e))
             pprint(response)
-
-
-
-
-
-
-def get_param_values_filtered():
-    pass
-
 
 
 if __name__=='__main__':
