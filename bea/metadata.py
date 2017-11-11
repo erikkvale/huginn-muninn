@@ -41,7 +41,7 @@ class MetadataHandler:
         if not response.ok:
             raise requests.HTTPError
 
-    # BEA metadata request methods
+    # BEA metadata equivalent request methods
     def get_dataset_list(self, target_node='Dataset', echo_request=False):
         url = (
             '{}?&'
