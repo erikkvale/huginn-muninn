@@ -1,44 +1,10 @@
 import requests
 import collections
-import pandas
 from pprint import pprint
 
 
 
-BEA_API_ROOT_URL = 'https://www.bea.gov/api/data/'
-BEA_API_USER_KEY = '3924A4B4-43A0-4BE6-B131-650F0740C025'
-
-
-METADATA_METHODS_AND_URLS = {
-    'GetDatasetList':
-        '{}?&'
-        'UserID={}&'
-        'method=GetDatasetList&'
-        'ResultFormat={}&',
-    'GetParameterList':
-        '{}?&'
-        'UserID={}&'
-        'method=GetParameterList&'
-        'datasetname={}&'
-        'ResultFormat={}&',
-    'GetParameterValues':
-        '{}?&'
-        'UserID={}&'
-        'method=GetParameterValues&'
-        'datasetname={}&'
-        'ParameterName={}&'
-        'ResultFormat={}&',
-    'GetParameterValuesFiltered':
-        '{}?&'
-        'UserID={}&'
-        'method=GetParameterValuesFiltered&'
-        'datasetname={}&'
-        'TargetParameter={}&'
-        'TableName={}'
-        'ResultFormat={}&',
-}
-
-class MetaRequestHandle:
+class MetadataHandler:
 
     def __init__(self, base_url, user_key,
                  result_format='JSON'):
@@ -73,8 +39,7 @@ class MetaRequestHandle:
         if not response.ok:
             raise requests.HTTPError
 
-
-    # Metadata
+    # BEA metadata request methods
     def get_dataset_list(self, target_node='Dataset', echo_request=False):
         url = (
             '{}?&'
@@ -147,6 +112,7 @@ class MetaRequestHandle:
         return self._get_and_process_response(url, target_node, echo_request)
 
 
+    # Helper methods
     def _get_and_process_response(self, url, target_node, echo_request):
         response = requests.get(url)
         if response.ok:
@@ -189,10 +155,9 @@ class MetaRequestHandle:
 
 
 if __name__=='__main__':
-    handler = MetaRequestHandle(BEA_API_ROOT_URL, BEA_API_USER_KEY)
-    dataset_result = handler.get_dataset_list()
-    region_income_params = handler.get_param_values('RegionalIncome', 'GeoFips')
-    pprint(region_income_params)
+    BEA_API_ROOT_URL = 'https://www.bea.gov/api/data/'
+    BEA_API_USER_KEY = '3924A4B4-43A0-4BE6-B131-650F0740C025'
 
+    handler = MetadataHandler(BEA_API_ROOT_URL, BEA_API_USER_KEY)
 
 

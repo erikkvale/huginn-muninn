@@ -5,7 +5,7 @@ import requests
 from bea.metadata import (
     BEA_API_ROOT_URL,
     BEA_API_USER_KEY,
-    MetaRequestHandle
+    MetadataHandler
 )
 
 
@@ -18,7 +18,7 @@ class TestMetadataHandler(unittest.TestCase):
         should NOT raise a ValueError
         """
         try:
-            obj = MetaRequestHandle(
+            obj = MetadataHandler(
                 base_url=BEA_API_ROOT_URL,
                 user_key=BEA_API_USER_KEY,
                 result_format='JSON'
@@ -33,7 +33,7 @@ class TestMetadataHandler(unittest.TestCase):
         should raise ValueError
         """
         with self.assertRaises(ValueError):
-            obj = MetaRequestHandle(
+            obj = MetadataHandler(
                 base_url=BEA_API_ROOT_URL,
                 user_key=BEA_API_USER_KEY,
                 result_format='XML'
@@ -45,7 +45,7 @@ class TestMetadataHandler(unittest.TestCase):
          Valid constructor, if this fails, then
         """
         try:
-            obj = MetaRequestHandle(
+            obj = MetadataHandler(
                 base_url=BEA_API_ROOT_URL,
                 user_key=BEA_API_USER_KEY,
                 result_format='JSON'
