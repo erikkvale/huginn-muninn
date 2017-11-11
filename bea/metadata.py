@@ -3,9 +3,11 @@ import collections
 from pprint import pprint
 
 
-
-class MetadataHandler:
-
+class BaseHandler(object):
+    """
+    This is the super class handler with attributes
+    common to all subclassed handlers for BEA requests
+    """
     def __init__(self, user_key, result_format='JSON'):
         # The current base URL for the BEA's API
         self.base_url = 'https://www.bea.gov/api/data/'
@@ -34,12 +36,59 @@ class MetadataHandler:
         else:
             self.result_format = result_format
 
-
         # Check base_url response to see if API service
         # is available
         response = requests.get(self.base_url)
         if not response.ok:
             raise requests.HTTPError
+
+    # Helper methods
+    def _get_and_process_response(self, url, target_node, echo_request):
+        response = requests.get(url)
+        if response.ok:
+            # Decode JSON response to Python type(s)
+            response = response.json()
+            # Unpack results
+            target_results = self._unpack_results(response, target_node)
+            if echo_request:
+                # Unpack the request echo in the response,
+                # return the echo and results as a tuple
+                echo_request_params = self._unpack_request(response)
+                return (echo_request_params, target_results)
+            else:
+                return target_results
+        else:
+            raise requests.HTTPError
+
+
+    def _unpack_request(self, response):
+        node_hierarchy = self.request_node_hierarchy
+        return self._traverse_nodes(response, node_hierarchy)
+
+
+    def _unpack_results(self, response, target_node):
+        node_hierarchy = self.results_node_hierarchy
+        # Target node for results are not static, add target node
+        node_hierarchy['target_node'] = target_node
+        return self._traverse_nodes(response, node_hierarchy)
+
+
+    def _traverse_nodes(self, response, node_hierarchy):
+        try:
+            for k, v in node_hierarchy.items():
+                response = response[v]
+            return response
+        except KeyError as e:
+            print("The key: {} does not exist in the response"
+                  .format(e))
+            pprint(response)
+
+
+
+class MetadataHandler(BaseHandler):
+
+    def __init__(self, user_key, result_format='JSON'):
+        super().__init__(user_key, result_format)
 
     # BEA metadata equivalent request methods
     def get_dataset_list(self, target_node='Dataset', echo_request=False):
@@ -114,52 +163,12 @@ class MetadataHandler:
         return self._get_and_process_response(url, target_node, echo_request)
 
 
-    # Helper methods
-    def _get_and_process_response(self, url, target_node, echo_request):
-        response = requests.get(url)
-        if response.ok:
-            # Decode JSON response to Python type(s)
-            response = response.json()
-            # Unpack results
-            target_results = self._unpack_results(response, target_node)
-            if echo_request:
-                # Unpack the request echo in the response,
-                # return the echo and results as a tuple
-                echo_request_params = self._unpack_request(response)
-                return (echo_request_params, target_results)
-            else:
-                return target_results
-        else:
-            raise requests.HTTPError
-
-
-    def _unpack_request(self, response):
-        node_hierarchy = self.request_node_hierarchy
-        return self._traverse_nodes(response, node_hierarchy)
-
-
-    def _unpack_results(self, response, target_node):
-        node_hierarchy = self.results_node_hierarchy
-        # Target node for results are not static, add target node
-        node_hierarchy['target_node'] = target_node
-        return self._traverse_nodes(response, node_hierarchy)
-
-
-    def _traverse_nodes(self, response, node_hierarchy):
-        try:
-            for k, v in node_hierarchy.items():
-                response = response[v]
-            return response
-        except KeyError as e:
-            print("The key: {} does not exist in the response"
-                  .format(e))
-            pprint(response)
-
 
 if __name__=='__main__':
 
     BEA_API_USER_KEY = '3924A4B4-43A0-4BE6-B131-650F0740C025'
 
     handler = MetadataHandler(BEA_API_USER_KEY)
+    ds = handler.get_dataset_list()
 
 
