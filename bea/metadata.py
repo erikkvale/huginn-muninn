@@ -89,6 +89,42 @@ class MetaRequestHandle:
         return self._get_and_process_response(url, target_node, echo_request)
 
 
+    def get_param_list(self, dataset_name, target_node='Parameter',
+                       echo_request=False):
+        url = (
+            '{}?&'
+            'UserID={}&'
+            'method=GetParameterList&'
+            'datasetname={}&'
+            'ResultFormat={}&'.format(
+                self.base_url,
+                self.user_key,
+                dataset_name,
+                self.result_format
+            )
+        )
+        return self._get_and_process_response(url, target_node, echo_request)
+
+
+    def get_param_values(self, dataset_name, param_name,
+                         target_node='ParamValue', echo_request=False):
+        url = (
+            '{}?&'
+            'UserID={}&'
+            'method=GetParameterValues&'
+            'datasetname={}&'
+            'ParameterName={}&'
+            'ResultFormat={}&'.format(
+                self.base_url,
+                self.user_key,
+                dataset_name,
+                param_name,
+                self.result_format
+            )
+        )
+        return self._get_and_process_response(url, target_node, echo_request)
+
+
     def _get_and_process_response(self, url, target_node, echo_request):
         response = requests.get(url)
         if response.ok:
@@ -108,21 +144,20 @@ class MetaRequestHandle:
 
 
     def _unpack_request(self, response):
-        try:
-            for k, v in self.request_node_hierarchy.items():
-                response = response[v]
-            return response
-        except KeyError as e:
-            print("The key: {} does not exist in the response"
-                  .format(e))
-            pprint(response)
-
+        node_hierarchy = self.request_node_hierarchy
+        return self._node_traverser(response, node_hierarchy)
 
 
     def _unpack_results(self, response, target_node):
-        self.results_node_hierarchy['target_node'] = target_node
+        node_hierarchy = self.results_node_hierarchy
+        # Target node for results are not static, add target node
+        node_hierarchy['target_node'] = target_node
+        return self._node_traverser(response, node_hierarchy)
+
+
+    def _node_traverser(self, response, node_hierarchy):
         try:
-            for k, v in self.results_node_hierarchy.items():
+            for k, v in node_hierarchy.items():
                 response = response[v]
             return response
         except KeyError as e:
@@ -131,11 +166,9 @@ class MetaRequestHandle:
             pprint(response)
 
 
-def get_param_list():
-    pass
 
-def get_param_values():
-    pass
+
+
 
 def get_param_values_filtered():
     pass
@@ -145,7 +178,8 @@ def get_param_values_filtered():
 if __name__=='__main__':
     handler = MetaRequestHandle(BEA_API_ROOT_URL, BEA_API_USER_KEY)
     dataset_result = handler.get_dataset_list()
-    pprint(dataset_result)
+    region_income_params = handler.get_param_values('RegionalIncome', 'GeoFips')
+    pprint(region_income_params)
 
 
 
