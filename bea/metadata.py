@@ -135,17 +135,17 @@ class MetadataHandler:
 
     def _unpack_request(self, response):
         node_hierarchy = self.request_node_hierarchy
-        return self._node_traverser(response, node_hierarchy)
+        return self._traverse_nodes(response, node_hierarchy)
 
 
     def _unpack_results(self, response, target_node):
         node_hierarchy = self.results_node_hierarchy
         # Target node for results are not static, add target node
         node_hierarchy['target_node'] = target_node
-        return self._node_traverser(response, node_hierarchy)
+        return self._traverse_nodes(response, node_hierarchy)
 
 
-    def _node_traverser(self, response, node_hierarchy):
+    def _traverse_nodes(self, response, node_hierarchy):
         try:
             for k, v in node_hierarchy.items():
                 response = response[v]
@@ -160,6 +160,6 @@ if __name__=='__main__':
 
     BEA_API_USER_KEY = '3924A4B4-43A0-4BE6-B131-650F0740C025'
 
-    handler = MetadataHandler(BEA_API_ROOT_URL, BEA_API_USER_KEY)
+    handler = MetadataHandler(BEA_API_USER_KEY)
 
 
