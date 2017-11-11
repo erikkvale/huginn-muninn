@@ -43,7 +43,8 @@ class BaseHandler(object):
             raise requests.HTTPError
 
     # Helper methods
-    def _get_and_process_response(self, url, target_node, echo_request):
+    def _get_and_process_response(self, url, target_node,
+                                  echo_request):
         response = requests.get(url)
         if response.ok:
             # Decode JSON response to Python type(s)
@@ -102,7 +103,11 @@ class MetadataHandler(BaseHandler):
                 self.result_format
             )
         )
-        return self._get_and_process_response(url, target_node, echo_request)
+        return super()._get_and_process_response(
+            url,
+            target_node,
+            echo_request
+        )
 
 
     def get_param_list(self, dataset_name, target_node='Parameter',
@@ -119,7 +124,11 @@ class MetadataHandler(BaseHandler):
                 self.result_format
             )
         )
-        return self._get_and_process_response(url, target_node, echo_request)
+        return super()._get_and_process_response(
+            url,
+            target_node,
+            echo_request
+        )
 
 
     def get_param_values(self, dataset_name, param_name,
@@ -138,7 +147,11 @@ class MetadataHandler(BaseHandler):
                 self.result_format
             )
         )
-        return self._get_and_process_response(url, target_node, echo_request)
+        return super()._get_and_process_response(
+            url,
+            target_node,
+            echo_request
+        )
 
 
     def get_param_values_filtered(self, dataset_name, target_param,
@@ -160,8 +173,19 @@ class MetadataHandler(BaseHandler):
                 self.result_format
             )
         )
-        return self._get_and_process_response(url, target_node, echo_request)
+        return super()._get_and_process_response(
+            url,
+            target_node,
+            echo_request
+        )
 
+class DataHandler(BaseHandler):
+
+    def __init__(self, user_key, result_format='JSON'):
+        super().__init__(user_key, result_format)
+
+    def get_data(self, dataset_name, **params):
+        pass
 
 
 if __name__=='__main__':
@@ -170,5 +194,6 @@ if __name__=='__main__':
 
     handler = MetadataHandler(BEA_API_USER_KEY)
     ds = handler.get_dataset_list()
+    pprint(ds)
 
 
