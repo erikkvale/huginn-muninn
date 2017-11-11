@@ -179,13 +179,35 @@ class MetadataHandler(BaseHandler):
             echo_request
         )
 
+    def create_metadata_dict(self, dataset_name, param_name):
+        metadata_dict = collections.OrderedDict()
+        metadata_dict['dataset_name'] = dataset_name
+        param_list = self.get_param_list(dataset_name)
+        metadata_dict['param_names'] = param_list
+
+        return metadata_dict
+
+
+
+
 class DataHandler(BaseHandler):
 
     def __init__(self, user_key, result_format='JSON'):
         super().__init__(user_key, result_format)
 
     def get_data(self, dataset_name, **params):
-        pass
+        url = (
+            '{}?&'
+            'UserID={}&'
+            'method=GetData&'
+            'datasetname={}&'
+            'ResultFormat={}&'.format(
+                self.base_url,
+                self.user_key,
+                dataset_name,
+
+            )
+        )
 
 
 if __name__=='__main__':
@@ -193,7 +215,6 @@ if __name__=='__main__':
     BEA_API_USER_KEY = '3924A4B4-43A0-4BE6-B131-650F0740C025'
 
     handler = MetadataHandler(BEA_API_USER_KEY)
-    ds = handler.get_dataset_list()
-    pprint(ds)
+    meta_dict = handler.create_metadata_dict()
 
 
