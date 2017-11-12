@@ -1,3 +1,5 @@
 # huginn-muninn
-![alt text] (.docs/images/huginn_muninn.jpg?raw=true)
+<p align="center">
+<img src="docs/images/huginn_muninn.jpg">
+</p>
 Library to describe and fetch economics data from various global sources.
