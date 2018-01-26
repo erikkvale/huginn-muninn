@@ -247,7 +247,7 @@ class DataHandler(BaseHandler):
 
 if __name__=='__main__':
 
-    BEA_API_USER_KEY = '3924A4B4-43A0-4BE6-B131-650F0740C025'
+    BEA_API_USER_KEY = ''
 
     handler = MetadataHandler(BEA_API_USER_KEY)
     my_dict = handler.create_metadata_dict('RegionalIncome')
