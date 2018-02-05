@@ -1,22 +1,23 @@
 """
-BEA API:
 This module contains specifics based on the current documentation,
 to make calls and consume the data released by the BEA.
 
-***NOTE***
 Although the BEA (at the time of this writing) supports both XML
 and JSON responses; this module does not have XML response support
 at this time, only JSON and Python types.
-***NOTE***
+
 --------------------
 API Calling Limits
 --------------------
+
 The API has default calling limits as shown below. These limits are meant
 to protect BEA’s API and webserver infrastructure from activity that may be
 detrimental to that infrastructure and/or unfairly impede other API users.
+
 • 1000 API calls per minute, and/or
 • 30 errors per minute, and/or
 • 50 MB (raw data) per minute.
+
 Any user that exceeds the above calling limits will receive an explanatory
 error message for each API call until the per-minute cause has expired.
 The best way to avoid such errors is to design your application to call
@@ -70,7 +71,22 @@ class BaseHandler(object):
 
     # Helper methods
     def _get_and_process_response(self, url, target_node,
-                                  echo_request):
+                                  echo_request=False):
+        """
+        Takes the request URL and a target node,
+        delegating to a few other helper methods to
+        unpack and process the response.
+
+        :param url: The target request URL
+        :type url: str
+        :param target_node: The response node containing the data
+        :type target_node: str
+        :param echo_request: Whether to echo the request (params, etc.)
+            in the response.
+        :type echo_request: bool
+        :return: The targeted data results as JSON
+        :rtype: JSON
+        """
         response = requests.get(url)
         if response.ok:
             # Decode JSON response to Python type(s)
@@ -119,6 +135,16 @@ class MetadataHandler(BaseHandler):
 
     # BEA metadata equivalent request methods
     def get_dataset_list(self, target_node='Dataset', echo_request=False):
+        """
+        Retrieves the BEA datasets list
+
+        :param target_node: The dataset target node
+        :type target_node: str
+        :param echo_request: Whether to echo the request and params in the response
+        :type echo_request: bool
+        :return: The targeted data results as JSON
+        :rtype: JSON
+        """
         url = (
             '{}?&'
             'UserID={}&'
