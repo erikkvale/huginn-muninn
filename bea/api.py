@@ -266,7 +266,7 @@ class DataHandler(BaseHandler):
                 self.base_url,
                 self.user_key,
                 dataset_name,
-
+                self.result_format
             )
         )
 
