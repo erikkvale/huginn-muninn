@@ -36,6 +36,13 @@ class BaseHandler(object):
     common to all subclassed handlers for BEA requests
     """
     def __init__(self, user_key, result_format='JSON'):
+        """
+
+        :param user_key:
+        :type user_key:
+        :param result_format:
+        :type result_format:
+        """
         # The current base URL for the BEA's API
         self.base_url = 'https://www.bea.gov/api/data/'
         self.user_key = user_key
@@ -105,11 +112,30 @@ class BaseHandler(object):
 
 
     def _unpack_request(self, response):
+        """
+        Caller to unpack the request node hierarchy, i.e.
+        NOT the results node hierarchy.
+        Delegates to other helper methods.
+
+        :param response: The JSON response
+        :type response: JSON response
+        :return: JSON response's request
+        :rtype:
+        """
         node_hierarchy = self.request_node_hierarchy
         return self._traverse_nodes(response, node_hierarchy)
 
 
     def _unpack_results(self, response, target_node):
+        """
+
+        :param response:
+        :type response:
+        :param target_node:
+        :type target_node:
+        :return:
+        :rtype:
+        """
         node_hierarchy = self.results_node_hierarchy
         # Target node for results are not static, add target node
         node_hierarchy['target_node'] = target_node
@@ -117,6 +143,15 @@ class BaseHandler(object):
 
 
     def _traverse_nodes(self, response, node_hierarchy):
+        """
+
+        :param response:
+        :type response:
+        :param node_hierarchy:
+        :type node_hierarchy:
+        :return:
+        :rtype:
+        """
         try:
             for k, v in node_hierarchy.items():
                 response = response[v]
@@ -131,6 +166,13 @@ class BaseHandler(object):
 class MetadataHandler(BaseHandler):
 
     def __init__(self, user_key, result_format='JSON'):
+        """
+
+        :param user_key:
+        :type user_key:
+        :param result_format:
+        :type result_format:
+        """
         super().__init__(user_key, result_format)
 
     # BEA metadata equivalent request methods
@@ -164,6 +206,17 @@ class MetadataHandler(BaseHandler):
 
     def get_param_list(self, dataset_name, target_node='Parameter',
                        echo_request=False):
+        """
+
+        :param dataset_name:
+        :type dataset_name:
+        :param target_node:
+        :type target_node:
+        :param echo_request:
+        :type echo_request:
+        :return:
+        :rtype:
+        """
         url = (
             '{}?&'
             'UserID={}&'
@@ -185,6 +238,19 @@ class MetadataHandler(BaseHandler):
 
     def get_param_values(self, dataset_name, param_name,
                          target_node='ParamValue', echo_request=False):
+        """
+
+        :param dataset_name:
+        :type dataset_name:
+        :param param_name:
+        :type param_name:
+        :param target_node:
+        :type target_node:
+        :param echo_request:
+        :type echo_request:
+        :return:
+        :rtype:
+        """
         url = (
             '{}?&'
             'UserID={}&'
@@ -209,6 +275,21 @@ class MetadataHandler(BaseHandler):
     def get_param_values_filtered(self, dataset_name, target_param,
                                   table_name, target_node='ParamValue',
                                   echo_request=False):
+        """
+
+        :param dataset_name:
+        :type dataset_name:
+        :param target_param:
+        :type target_param:
+        :param table_name:
+        :type table_name:
+        :param target_node:
+        :type target_node:
+        :param echo_request:
+        :type echo_request:
+        :return:
+        :rtype:
+        """
         url = (
             '{}?&'
             'UserID={}&'
@@ -232,6 +313,13 @@ class MetadataHandler(BaseHandler):
         )
 
     def create_metadata_dict(self, dataset_name):
+        """
+
+        :param dataset_name:
+        :type dataset_name:
+        :return:
+        :rtype:
+        """
         metadata_dict = {}
         # Add dataset name to dict and create a params key with an empty dict
         metadata_dict['dataset_name'] = dataset_name
@@ -254,9 +342,25 @@ class MetadataHandler(BaseHandler):
 class DataHandler(BaseHandler):
 
     def __init__(self, user_key, result_format='JSON'):
+        """
+
+        :param user_key:
+        :type user_key:
+        :param result_format:
+        :type result_format:
+        """
         super().__init__(user_key, result_format)
 
     def get_data(self, dataset_name, **params):
+        """
+
+        :param dataset_name:
+        :type dataset_name:
+        :param params:
+        :type params:
+        :return:
+        :rtype:
+        """
         url = (
             '{}?&'
             'UserID={}&'
